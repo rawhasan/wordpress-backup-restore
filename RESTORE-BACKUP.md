@@ -33,16 +33,15 @@ Make sure the destination structure exists or is writable by the user running th
 
 ### :arrow_forward: How to Use
 
-1. **Make the script executable:**
-
+1. **Place the script** in the following directory:
    ```bash
-   chmod +x restore-wp-backup.sh
+   /sites/example.com/shells/restore-wp-backup.sh
    ```
 
 2. **Run the script:**
 
    ```bash
-   ./restore-wp-backup.sh
+   bash wp-backup.sh
    ```
 
 3. **Provide the required information when prompted**.
