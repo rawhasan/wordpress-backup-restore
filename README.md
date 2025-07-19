@@ -14,17 +14,12 @@ This guide explains how to use the `wp-backup.sh` and `restore-wp-backup.sh` scr
 
 ## 📁 Script Location and Setup
 
-1. **Place the script** anywhere you like, e.g.:
+1. **Place the script** in the following directory:
    ```bash
-   /usr/local/bin/wp-backup.sh
+   /sites/example.com/shells/wp-backup.sh
    ```
 
-2. **Make the script executable**:
-   ```bash
-   chmod +x /usr/local/bin/wp-backup.sh
-   ```
-
-3. **Open the script** in an editor and configure the following variables:
+2. **Open the script** in an editor and configure the following variables:
 
    ```bash
    SITE_NAME="example.com"
@@ -42,7 +37,7 @@ This guide explains how to use the `wp-backup.sh` and `restore-wp-backup.sh` scr
 To run the script:
 
 ```bash
-./wp-backup.sh
+bash wp-backup.sh
 ```
 
 You will be prompted to enter:
