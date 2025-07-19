@@ -1,6 +1,6 @@
-# WordPress Backup Script Guide
+# WordPress Site Backup & Restore Script Guide
 
-This guide explains how to use the `wp-backup.sh` script to create a backup of your WordPress site's `wp-content` directory and MySQL database.
+This guide explains how to use the `wp-backup.sh` and `restore-wp-backup.sh` scripts to create a backup of the WordPress site's `wp-content` directory and MySQL database in the old server, and restore the back-up in a new server for site migration.
 
 ## 🔧 Prerequisites
 
