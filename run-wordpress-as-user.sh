@@ -1,53 +1,75 @@
 #!/bin/bash
 
-# Exit on error
 set -e
 
-# Define your WordPress path (edit if needed)
-WP_PATH="/var/www/html"
-
-# Get current user
+# CONFIGURATION
+DOMAIN="example.com"
+PHP_VERSION="8.3"
+WP_PATH="/sites/$DOMAIN/public"
+POOL_FILE="/etc/php/${PHP_VERSION}/fpm/pool.d/www.conf"
+BACKUP_FILE="/tmp/www.conf.bak.$(date +%s)"
 CURRENT_USER=$(whoami)
 
-# PHP version (edit if different)
-PHP_VERSION="8.3"
+echo "🧰 Starting update for: $DOMAIN (as $CURRENT_USER)"
+echo "📁 WordPress path: $WP_PATH"
 
-# Pool file path
-POOL_FILE="/etc/php/${PHP_VERSION}/fpm/pool.d/www.conf"
+# --- ROLLBACK FUNCTION ---
+rollback() {
+  echo "❌ Error occurred. Rolling back changes..."
 
-echo "🧰 Updating WordPress permissions and PHP-FPM pool for user: $CURRENT_USER"
+  if [ -f "$BACKUP_FILE" ]; then
+    echo "🔄 Restoring original PHP-FPM config..."
+    sudo cp "$BACKUP_FILE" "$POOL_FILE"
+  fi
 
-# 1. Change ownership of WordPress files
-echo "📁 Setting ownership of $WP_PATH to $CURRENT_USER..."
-sudo chown -R $CURRENT_USER:$CURRENT_USER "$WP_PATH"
+  if id -nG www-data | grep -qw "$CURRENT_USER"; then
+    echo "👥 Removing www-data from $CURRENT_USER group..."
+    sudo gpasswd -d www-data "$CURRENT_USER" || true
+  fi
 
-# 2. Update PHP-FPM pool to run as current user
-echo "⚙️ Updating $POOL_FILE..."
+  echo "🔁 Restarting services to apply rollback..."
+  sudo systemctl restart "php${PHP_VERSION}-fpm"
+  sudo systemctl reload nginx
 
-sudo sed -i "s/^user = .*/user = $CURRENT_USER/" $POOL_FILE
-sudo sed -i "s/^group = .*/group = $CURRENT_USER/" $POOL_FILE
+  echo "✅ Rollback complete."
+  exit 1
+}
 
-sudo sed -i "s/^listen.owner = .*/listen.owner = $CURRENT_USER/" $POOL_FILE || \
-  echo "listen.owner = $CURRENT_USER" | sudo tee -a $POOL_FILE
+trap rollback ERR
 
-sudo sed -i "s/^listen.group = .*/listen.group = $CURRENT_USER/" $POOL_FILE || \
-  echo "listen.group = $CURRENT_USER" | sudo tee -a $POOL_FILE
+# --- BACKUP ---
+echo "📦 Backing up $POOL_FILE to $BACKUP_FILE"
+sudo cp "$POOL_FILE" "$BACKUP_FILE"
 
-sudo sed -i "s/^listen.mode = .*/listen.mode = 0660/" $POOL_FILE || \
-  echo "listen.mode = 0660" | sudo tee -a $POOL_FILE
+# --- OWNERSHIP & PERMISSIONS ---
+echo "📁 Changing ownership of $WP_PATH to $CURRENT_USER"
+sudo chown -R "$CURRENT_USER:$CURRENT_USER" "$WP_PATH"
 
-# 3. Add www-data to the current user's group to allow Nginx to talk to PHP
-echo "👥 Adding www-data to $CURRENT_USER group..."
-sudo usermod -aG "$CURRENT_USER" www-data
-
-# 4. Set secure file permissions for WordPress
-echo "🔐 Setting file and directory permissions..."
+echo "🔐 Setting WordPress permissions..."
 find "$WP_PATH" -type d -exec chmod 755 {} \;
 find "$WP_PATH" -type f -exec chmod 644 {} \;
 
-# 5. Restart services
-echo "🔁 Restarting PHP-FPM and reloading Nginx..."
+# --- PHP-FPM CONFIG ---
+echo "✏️ Updating PHP-FPM pool: $POOL_FILE"
+sudo sed -i "s/^user = .*/user = $CURRENT_USER/" "$POOL_FILE"
+sudo sed -i "s/^group = .*/group = $CURRENT_USER/" "$POOL_FILE"
+
+sudo sed -i "s/^listen.owner = .*/listen.owner = $CURRENT_USER/" "$POOL_FILE" || \
+  echo "listen.owner = $CURRENT_USER" | sudo tee -a "$POOL_FILE"
+
+sudo sed -i "s/^listen.group = .*/listen.group = $CURRENT_USER/" "$POOL_FILE" || \
+  echo "listen.group = $CURRENT_USER" | sudo tee -a "$POOL_FILE"
+
+sudo sed -i "s/^listen.mode = .*/listen.mode = 0660/" "$POOL_FILE" || \
+  echo "listen.mode = 0660" | sudo tee -a "$POOL_FILE"
+
+# --- GROUP MODIFICATION ---
+echo "👥 Adding www-data to $CURRENT_USER group"
+sudo usermod -aG "$CURRENT_USER" www-data
+
+# --- RESTART SERVICES ---
+echo "🔁 Restarting PHP-FPM and Nginx"
 sudo systemctl restart "php${PHP_VERSION}-fpm"
 sudo systemctl reload nginx
 
-echo "✅ Done. WordPress now runs under user: $CURRENT_USER"
+echo "✅ WordPress now runs as $CURRENT_USER for domain: $DOMAIN"
