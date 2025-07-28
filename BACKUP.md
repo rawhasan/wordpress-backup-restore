@@ -1,4 +1,3 @@
-```markdown
 # WordPress Backup Script
 
 This script creates a full backup of a WordPress site — including the database and `wp-content` directory — and compresses everything into a single archive.
