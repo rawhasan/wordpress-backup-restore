@@ -1,62 +1,79 @@
-## WordPress Backup Script (`wp-backup.sh`)
+```markdown
+# WordPress Backup Script
 
-This script creates a compressed backup archive of a WordPress site, including the `wp-content` directory and the MySQL database. It is intended for server-level use and helps maintain regular backups of your WordPress installation.
+This script creates a full backup of a WordPress site — including the database and `wp-content` directory — and compresses everything into a single timestamped archive.
 
-### :file_folder: What It Does
+## 📝 What It Does
 
-1. **Prompts for MySQL credentials** (database name, username, password)  
-2. **Creates a temporary backup directory** in `/tmp/`  
-3. **Compresses the `wp-content` directory** into a `.tar.gz` file  
-4. **Exports the MySQL database** to an SQL file using `mysqldump`  
-5. **Creates a final compressed `.tar.gz` archive** containing both:  
-   - `wp-content.tar.gz`  
-   - `db.sql`  
-6. **Saves the archive** to the backup directory (e.g., `/sites/example.com/backups`)  
-7. **Cleans up temporary files**
+- Extracts MySQL credentials from `wp-config.php`
+- Backs up the `wp-content` directory
+- Dumps the MySQL database
+- Packages everything into a compressed `.tar.gz` archive
+- Cleans up temporary files
 
-### :hammer_and_wrench: Configuration
+## 📂 File Naming Convention
 
-Before running the script, update the following variables at the top of the file:
+All output files are named using this pattern:
+```
+example.com-wp-YYYY-MM-DD_HHMM.tar.gz
+├── example.com-db-YYYY-MM-DD_HHMM.sql
+└── example.com-wp-content-YYYY-MM-DD_HHMM.tar.gz
+```
+
+## ⚙️ Configuration
+
+You only need to set:
 
 ```bash
 SITE_NAME="example.com"
-WP_PATH="/sites/example.com/public"
-BACKUP_DIR="/sites/example.com/backups"
-DB_HOST="localhost"
 ```
 
-Adjust these paths to match your server and site structure.
+The script will automatically set:
 
-### :arrow_forward: How to Use
+- `WP_PATH`: `/sites/example.com/public`
+- `BACKUP_DIR`: `/sites/example.com/backups`
 
-1. **Make the script executable:**
+## 🧪 How to Use
 
-   ```bash
-   chmod +x wp-backup.sh
-   ```
+1. Open the script and edit the `SITE_NAME` variable with your domain.
+2. Run the script:
 
-2. **Run the script:**
+```bash
+bash wp-backup.sh
+```
 
-   ```bash
-   ./wp-backup.sh
-   ```
+3. Output will be a backup archive in:
 
-3. **Input the requested MySQL credentials** when prompted:
-   - Database name  
-   - Database user  
-   - Database password (hidden input)
+```
+/sites/example.com/backups/
+```
 
-4. After completion, your backup file will be saved as:
+## 🔐 Security Notes
 
-   ```
-   /sites/example.com/backups/example.com-wp-YYYY-MM-DD.tar.gz
-   ```
+- The script reads DB credentials securely from `wp-config.php`.
+- It avoids hardcoding passwords in the script.
+- Backup archives are created in `/tmp` before being moved to the final directory.
 
-   Replace `YYYY-MM-DD` with the current date.
+## 🧹 Cleanup
 
-### :pushpin: Notes
+The temporary working directory used during the backup is deleted after packaging.
 
-- This script only backs up the `wp-content` directory (themes, plugins, uploads). Core WordPress files are not included.  
-- You must have `mysqldump` installed and accessible in the server path.  
-- The backup will **overwrite any existing file** with the same name.  
-- Run this script as a user with permission to read the site directory and dump the database.
+## 📌 Requirements
+
+- Bash shell
+- `mysqldump`
+- `tar`
+- `grep`, `sed`, `date` (standard GNU tools)
+
+## ✅ Output Example
+
+```bash
+📦 Backing up wp-content...
+🛢️ Backing up MySQL database...
+🗜️ Creating final archive: /sites/example.com/backups/example.com-wp-2025-07-28_2145.tar.gz
+✅ Backup created: /sites/example.com/backups/example.com-wp-2025-07-28_2145.tar.gz
+```
+
+---
+Created for automated WordPress backups with safe, timestamped filenames.
+```
