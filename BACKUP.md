@@ -76,4 +76,4 @@ Temporary working directory is deleted after the archive is created.
 
 ---
 Created for safe, timestamped WordPress backups.
-```
+
